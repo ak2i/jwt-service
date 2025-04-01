@@ -4,7 +4,7 @@ info:
   description: REST API for issuing and verifying JWTs in PrepZen Lite.
   version: 1.0.0
 servers:
-  - url: https://jwt.prepzen.ai
+  - url: http://localhost:8000
 paths:
   /issue:
     post:
