@@ -1,0 +1,89 @@
+openapi: 3.1.0
+info:
+  title: JWT Service API
+  description: REST API for issuing and verifying JWTs in PrepZen Lite.
+  version: 1.0.0
+servers:
+  - url: https://jwt.prepzen.ai
+paths:
+  /issue:
+    post:
+      summary: Issue a new JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sub
+                - entitlement_id
+              properties:
+                sub:
+                  type: string
+                  description: Subject (user ID)
+                entitlement_id:
+                  type: string
+                  description: Entitlement object this token is bound to
+                exp:
+                  type: integer
+                  format: int64
+                  description: Expiration time (UNIX timestamp)
+      responses:
+        '200':
+          description: JWT successfully issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+        '400':
+          description: Invalid input
+  /verify:
+    post:
+      summary: Verify a JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                  description: JWT to verify
+      responses:
+        '200':
+          description: Token is valid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                  payload:
+                    type: object
+                    additionalProperties: true
+        '401':
+          description: Token is invalid or expired
+  /.well-known/jwks.json:
+    get:
+      summary: Get JWKS public keys
+      responses:
+        '200':
+          description: Public keys in JWKS format
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  keys:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
