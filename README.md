@@ -41,7 +41,7 @@ A stateless JWT service for issuing and verifying JWTs, built with Deno and Hono
 | PRIVATE_KEY_PEM | Private key in PEM format | Auto-generated in dev |
 | PUBLIC_KEY_PEM | Public key in PEM format | Derived from private key |
 | KEY_ID | Key ID for JWKS | default-key-1 |
-| DEFAULT_EXPIRATION | Default token expiration | 1h |
+| DEFAULT_EXPIRATION | Default token expiration | 600 |
 
 ## Development Setup
 
