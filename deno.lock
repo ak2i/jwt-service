@@ -1,6 +1,7 @@
 {
-  "version": "3",
+  "version": "4",
   "remote": {
+    "https://deno.land/std@0.208.0/dotenv/mod.ts": "039468f5c87d39b69d7ca6c3d68ebca82f206ec0ff5e011d48205eea292ea5a6",
     "https://deno.land/x/hono@v3.11.7/adapter/deno/serve-static.ts": "ba10cf6aaf39da942b0d49c3b9877ddba69d41d414c6551d890beb1085f58eea",
     "https://deno.land/x/hono@v3.11.7/client/client.ts": "ff340f58041203879972dd368b011ed130c66914f789826610869a90603406bf",
     "https://deno.land/x/hono@v3.11.7/client/index.ts": "3ff4cf246f3543f827a85a2c84d66a025ac350ee927613629bda47e854bfb7ba",
