@@ -12,6 +12,8 @@ if (Deno.env.get("DENO_ENV") !== "production") {
 
 const PORT = parseInt(Deno.env.get("PORT") || "8000");
 const API_KEY = Deno.env.get("API_KEY") || "dev-api-key";
+const API_KEY_CURRENT = Deno.env.get("API_KEY_CURRENT") || API_KEY; // Use API_KEY as fallback
+const API_KEY_PREVIOUS = Deno.env.get("API_KEY_PREVIOUS") || ""; // Empty string if not set
 const PRIVATE_KEY_PEM = Deno.env.get("PRIVATE_KEY_PEM");
 const PUBLIC_KEY_PEM = Deno.env.get("PUBLIC_KEY_PEM");
 const KEY_ID = Deno.env.get("KEY_ID") || "default-key-1";
@@ -34,7 +36,9 @@ const apiKeyAuth = async (c, next) => {
   
   const providedKey = authHeader.substring(7); // Remove "Bearer " prefix
   
-  if (providedKey !== API_KEY) {
+  const VALID_KEYS = [API_KEY_CURRENT, API_KEY_PREVIOUS].filter(Boolean); // Filter out empty strings
+  
+  if (!VALID_KEYS.includes(providedKey)) {
     return c.json({ error: "Invalid API key" }, 401);
   }
   

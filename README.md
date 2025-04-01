@@ -8,6 +8,7 @@ A stateless JWT service for issuing and verifying JWTs, built with Deno and Hono
 - Verify JWTs
 - JWKS endpoint for public key distribution
 - API key authentication for token issuance
+- API key rotation support
 - Configurable token expiration
 - Environment variable configuration
 - CORS support
@@ -37,7 +38,9 @@ A stateless JWT service for issuing and verifying JWTs, built with Deno and Hono
 | Variable | Description | Default |
 |----------|-------------|---------|
 | PORT | Server port | 8000 |
-| API_KEY | API key for /issue endpoint | dev-api-key |
+| API_KEY | API key for /issue endpoint (legacy) | dev-api-key |
+| API_KEY_CURRENT | Current API key for /issue endpoint | Same as API_KEY |
+| API_KEY_PREVIOUS | Previous API key (for rotation) | Empty |
 | PRIVATE_KEY_PEM | Private key in PEM format | Auto-generated in dev |
 | PUBLIC_KEY_PEM | Public key in PEM format | Derived from private key |
 | KEY_ID | Key ID for JWKS | default-key-1 |
@@ -79,9 +82,23 @@ A stateless JWT service for issuing and verifying JWTs, built with Deno and Hono
 deno run --allow-net --allow-env src/test_client.ts
 ```
 
+## CLI Tools
+
+### Generate API Key
+
+Generate a secure random API key for use with the JWT service:
+
+```
+deno run --allow-env --allow-hrtime cli/generate-api-key.ts
+```
+
+This generates a cryptographically secure random API key suitable for use in HTTP headers.
+
 ## Deployment
 
 This service is designed to be deployed on AWS ECS. The service is stateless and can be scaled horizontally. Private keys should be provided via environment variables in the ECS task definition.
+
+For secure API key management in production, see [AWS Secrets Manager Integration](./doc/aws-secrets-manager.md).
 
 ## License
 
