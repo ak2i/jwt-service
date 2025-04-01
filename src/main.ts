@@ -93,7 +93,14 @@ app.post("/issue", apiKeyAuth, async (c) => {
       iat: Math.floor(Date.now() / 1000),
     };
     
-    const expiration = exp || DEFAULT_EXPIRATION;
+    let expiration = exp;
+    if (!expiration) {
+      if (/^\d+$/.test(DEFAULT_EXPIRATION)) {
+        expiration = Math.floor(Date.now() / 1000) + parseInt(DEFAULT_EXPIRATION);
+      } else {
+        expiration = DEFAULT_EXPIRATION;
+      }
+    }
     
     const token = await new jose.SignJWT(payload)
       .setProtectedHeader({ alg: "RS256", kid: KEY_ID })
