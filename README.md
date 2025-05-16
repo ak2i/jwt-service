@@ -96,9 +96,125 @@ This generates a cryptographically secure random API key suitable for use in HTT
 
 ## Deployment
 
+This service can be deployed using various cloud platforms. Below are instructions for AWS ECS, Fly.io, and Google Cloud Run.
+
+### AWS ECS Deployment
+
 This service is designed to be deployed on AWS ECS. The service is stateless and can be scaled horizontally. Private keys should be provided via environment variables in the ECS task definition.
 
 For secure API key management in production, see [AWS Secrets Manager Integration](./doc/aws-secrets-manager.md).
+
+### Fly.io Deployment
+
+[Fly.io](https://fly.io/) offers a simple way to deploy Docker containers with global distribution.
+
+#### Prerequisites
+
+1. Install the Fly CLI:
+   ```bash
+   curl -L https://fly.io/install.sh | sh
+   ```
+
+2. Login to Fly.io:
+   ```bash
+   fly auth login
+   ```
+
+#### Deployment Steps
+
+1. Initialize your Fly.io app (run this in the project root):
+   ```bash
+   fly launch --dockerfile docker/Dockerfile
+   ```
+   - This will create a `fly.toml` file in your project
+
+2. Configure secrets for your private keys and API keys:
+   ```bash
+   fly secrets set PRIVATE_KEY_PEM="$(cat /path/to/your/private_key.pem)"
+   fly secrets set API_KEY_CURRENT="your-secure-api-key"
+   ```
+
+3. Deploy your application:
+   ```bash
+   fly deploy
+   ```
+
+4. Scale to multiple regions for redundancy (optional):
+   ```bash
+   fly regions add nrt fra syd
+   ```
+
+5. Scale to multiple instances per region (optional):
+   ```bash
+   fly scale count 3
+   ```
+
+### Google Cloud Run Deployment
+
+[Google Cloud Run](https://cloud.google.com/run) is a fully managed platform for containerized applications.
+
+#### Prerequisites
+
+1. Install the Google Cloud SDK:
+   ```bash
+   curl https://sdk.cloud.google.com | bash
+   ```
+
+2. Initialize the SDK and login:
+   ```bash
+   gcloud init
+   ```
+
+3. Enable required APIs:
+   ```bash
+   gcloud services enable run.googleapis.com secretmanager.googleapis.com
+   ```
+
+#### Deployment Steps
+
+1. Store your secrets in Secret Manager:
+   ```bash
+   # Create secrets
+   echo -n "your-private-key-content" | gcloud secrets create jwt-private-key --data-file=-
+   echo -n "your-api-key" | gcloud secrets create jwt-api-key --data-file=-
+   
+   # Grant access to the service account
+   gcloud secrets add-iam-policy-binding jwt-private-key \
+     --member="serviceAccount:YOUR_PROJECT_NUMBER-compute@developer.gserviceaccount.com" \
+     --role="roles/secretmanager.secretAccessor"
+   
+   gcloud secrets add-iam-policy-binding jwt-api-key \
+     --member="serviceAccount:YOUR_PROJECT_NUMBER-compute@developer.gserviceaccount.com" \
+     --role="roles/secretmanager.secretAccessor"
+   ```
+
+2. Build and push your Docker image:
+   ```bash
+   # Set your project ID
+   PROJECT_ID=$(gcloud config get-value project)
+   
+   # Build the image
+   docker build -t gcr.io/$PROJECT_ID/jwt-service -f docker/Dockerfile .
+   
+   # Push to Google Container Registry
+   docker push gcr.io/$PROJECT_ID/jwt-service
+   ```
+
+3. Deploy to Cloud Run:
+   ```bash
+   gcloud run deploy jwt-service \
+     --image gcr.io/$PROJECT_ID/jwt-service \
+     --platform managed \
+     --allow-unauthenticated \
+     --set-secrets="PRIVATE_KEY_PEM=jwt-private-key:latest,API_KEY_CURRENT=jwt-api-key:latest" \
+     --min-instances=1 \
+     --max-instances=10
+   ```
+
+4. Get the service URL:
+   ```bash
+   gcloud run services describe jwt-service --platform managed --format="value(status.url)"
+   ```
 
 ## License
 
