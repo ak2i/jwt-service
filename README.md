@@ -94,6 +94,23 @@ deno run --allow-env --allow-hrtime cli/generate-api-key.ts
 
 This generates a cryptographically secure random API key suitable for use in HTTP headers.
 
+### Generate Nodes JSON
+
+Generate JWT Service nodes information JSON for different deployment methods:
+
+```
+# AWS ECS deployment
+deno run --allow-env --allow-read --allow-run cli/generate-nodes-json.ts aws-ecs --region ap-northeast-1,us-west-2 --count 2
+
+# Fly.io deployment
+deno run --allow-env --allow-read --allow-run cli/generate-nodes-json.ts flyio --region nrt,fra,syd --host jwt-service.fly.dev
+
+# Google Cloud Run deployment
+deno run --allow-env --allow-read --allow-run cli/generate-nodes-json.ts cloud-run --region us-central1,asia-northeast1
+```
+
+This generates a JSON file based on the schema defined in [doc/jwt-service-nodes.md](./doc/jwt-service-nodes.md) with deployment-specific configuration.
+
 ## Deployment
 
 This service can be deployed using various cloud platforms. Below are instructions for AWS ECS, Fly.io, and Google Cloud Run.
