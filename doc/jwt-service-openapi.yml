@@ -87,3 +87,16 @@ paths:
                     items:
                       type: object
                       additionalProperties: true
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Service status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
