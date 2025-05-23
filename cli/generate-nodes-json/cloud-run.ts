@@ -13,7 +13,8 @@ const args = parse(Deno.args, {
   default: {
     region: "us-central1,asia-northeast1",
     "host-template": "jwt-service-REGION.run.app",
-    "key-acquisition": "APIキーはGoogle Secret Managerから取得してください。詳細は管理者にお問い合わせください。",
+    "key-acquisition":
+      "APIキーはGoogle Secret Managerから取得してください。詳細は管理者にお問い合わせください。",
   },
 });
 

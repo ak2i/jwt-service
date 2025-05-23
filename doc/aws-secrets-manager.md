@@ -14,7 +14,7 @@ This document outlines the recommended approach for securely managing API keys f
    ```
 
    You can use the included CLI tool to generate secure API keys:
-   
+
    ```bash
    deno run --allow-env --allow-hrtime cli/generate-api-key.ts
    ```
@@ -22,20 +22,20 @@ This document outlines the recommended approach for securely managing API keys f
 2. **Update the secret for key rotation**:
 
    When rotating keys, you should move the current key to previous and set a new current key:
-   
+
    ```bash
    # Generate a new API key
    NEW_API_KEY=$(deno run --allow-env --allow-hrtime cli/generate-api-key.ts)
-   
+
    # Get the current secret value
    CURRENT_SECRET=$(aws secretsmanager get-secret-value \
      --secret-id jwt-service/api-keys \
      --query SecretString \
      --output text)
-   
+
    # Extract the current key to become the previous key
    CURRENT_KEY=$(echo $CURRENT_SECRET | jq -r '.API_KEY_CURRENT')
-   
+
    # Update the secret with new values
    aws secretsmanager update-secret \
      --secret-id jwt-service/api-keys \

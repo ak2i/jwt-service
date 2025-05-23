@@ -13,7 +13,8 @@ const args = parse(Deno.args, {
   default: {
     region: "ap-northeast-1",
     "host-prefix": "jwt-service",
-    "key-acquisition": "APIキーはAWS Secrets Managerから取得してください。詳細は管理者にお問い合わせください。",
+    "key-acquisition":
+      "APIキーはAWS Secrets Managerから取得してください。詳細は管理者にお問い合わせください。",
     count: 1,
   },
 });

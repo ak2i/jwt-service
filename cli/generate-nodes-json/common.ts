@@ -48,7 +48,7 @@ export function generateNodesJson(config: JwtServiceNodesConfig): string {
     },
   };
 
-  const nodesWithEndpoints = mergedConfig.nodes.map(node => ({
+  const nodesWithEndpoints = mergedConfig.nodes.map((node) => ({
     ...node,
     port: node.port || 8000,
     status: node.status || "active",

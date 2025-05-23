@@ -168,7 +168,7 @@ switch (deploymentType) {
   case "cloud-run":
     scriptPath = "./generate-nodes-json/cloud-run.ts";
     break;
-  case "kubernetes":  // 新しいデプロイタイプを追加
+  case "kubernetes": // 新しいデプロイタイプを追加
     scriptPath = "./generate-nodes-json/kubernetes.ts";
     break;
   default:

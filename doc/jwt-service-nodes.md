@@ -215,22 +215,24 @@
 
 ```javascript
 // ノード情報JSONからノードを選択
-const node = jwtServiceNodes.nodes.find(n => n.region === 'ap-northeast-1' && n.status === 'active');
+const node = jwtServiceNodes.nodes.find((n) =>
+  n.region === "ap-northeast-1" && n.status === "active"
+);
 
 // APIキーを取得（別途安全な方法で取得）
 const apiKey = getApiKeyFromSecureStorage();
 
 // トークン発行リクエスト
 const response = await fetch(`https://${node.host}:${node.port}${node.endpoints.issue}`, {
-  method: 'POST',
+  method: "POST",
   headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${apiKey}`
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${apiKey}`,
   },
   body: JSON.stringify({
-    sub: 'user123',
-    entitlement_id: 'entitlement456'
-  })
+    sub: "user123",
+    entitlement_id: "entitlement456",
+  }),
 });
 
 const { token } = await response.json();

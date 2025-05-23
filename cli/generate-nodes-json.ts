@@ -2,19 +2,19 @@
 
 /**
  * JWT Serviceノード情報JSON生成ツール
- * 
+ *
  * 使用方法:
  *   - AWS ECS用:   deno run --allow-env --allow-read --allow-run cli/generate-nodes-json.ts aws-ecs [引数]
  *   - Fly.io用:    deno run --allow-env --allow-read --allow-run cli/generate-nodes-json.ts flyio [引数]
  *   - Cloud Run用: deno run --allow-env --allow-read --allow-run cli/generate-nodes-json.ts cloud-run [引数]
- * 
+ *
  * 詳細なヘルプ:
  *   deno run --allow-env --allow-read --allow-run cli/generate-nodes-json.ts help
  */
 
 async function main() {
   const args = Deno.args;
-  
+
   if (args.length === 0 || args[0] === "help") {
     printHelp();
     return;
@@ -22,10 +22,10 @@ async function main() {
 
   const deploymentType = args[0];
   const deploymentArgs = args.slice(1);
-  
+
   try {
     let scriptPath = "";
-    
+
     switch (deploymentType) {
       case "aws-ecs":
         scriptPath = "./generate-nodes-json/aws-ecs.ts";
@@ -39,19 +39,19 @@ async function main() {
       default:
         throw new Error(`不明なデプロイタイプ: ${deploymentType}`);
     }
-    
+
     const command = new Deno.Command(Deno.execPath(), {
       args: ["run", "--allow-env", "--allow-net", scriptPath, ...deploymentArgs],
       stdout: "piped",
       stderr: "piped",
     });
-    
+
     const { stdout, stderr, code } = await command.output();
-    
+
     if (code !== 0) {
       throw new Error(new TextDecoder().decode(stderr));
     }
-    
+
     console.log(new TextDecoder().decode(stdout));
   } catch (error) {
     console.error("Error:", error.message);

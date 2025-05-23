@@ -10,11 +10,11 @@ const KEY_LENGTH = parseInt(Deno.env.get("KEY_LENGTH") || "48");
 function generateSecureApiKey(length: number): string {
   const buffer = new Uint8Array(length);
   crypto.getRandomValues(buffer);
-  
+
   return btoa(String.fromCharCode(...buffer))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=/g, '')
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "")
     .substring(0, length);
 }
 

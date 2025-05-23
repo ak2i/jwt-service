@@ -13,7 +13,8 @@ const args = parse(Deno.args, {
   default: {
     region: "nrt,fra,syd",
     host: "jwt-service.fly.dev",
-    "key-acquisition": "APIキーはFly Secretsから取得してください。詳細は管理者にお問い合わせください。",
+    "key-acquisition":
+      "APIキーはFly Secretsから取得してください。詳細は管理者にお問い合わせください。",
   },
 });
 
