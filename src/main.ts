@@ -21,7 +21,9 @@ if (rawPort && PORT !== parsedPort) {
 }
 const API_KEY = Deno.env.get("API_KEY") || "dev-api-key";
 const API_KEY_CURRENT = Deno.env.get("API_KEY_CURRENT") || API_KEY; // Use API_KEY as fallback
-const API_KEY_PREVIOUS = Deno.env.get("API_KEY_PREVIOUS") || ""; // Empty string if not set
+const API_KEY_PREVIOUS_PLACEHOLDER = "NONE";
+const rawApiKeyPrevious = Deno.env.get("API_KEY_PREVIOUS");
+const API_KEY_PREVIOUS = rawApiKeyPrevious && rawApiKeyPrevious !== API_KEY_PREVIOUS_PLACEHOLDER ? rawApiKeyPrevious : "";
 const PRIVATE_KEY_PEM = Deno.env.get("PRIVATE_KEY_PEM");
 const PUBLIC_KEY_PEM = Deno.env.get("PUBLIC_KEY_PEM");
 const KEY_ID = Deno.env.get("KEY_ID") || "default-key-1";
