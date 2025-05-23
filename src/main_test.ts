@@ -23,6 +23,9 @@ async function waitForServer(url: string, timeout = 10000) {
   while (Date.now() - start < timeout) {
     try {
       const res = await fetch(url);
+      if (res.body) {
+        await res.body.cancel();
+      }
       if (res.ok) return;
     } catch (_) {
       // ignore until server is ready
@@ -75,5 +78,11 @@ Deno.test("JWT service endpoints", async (t) => {
   } finally {
     server.kill("SIGTERM");
     await server.status;
+    if (server.stdout) {
+      await server.stdout.cancel();
+    }
+    if (server.stderr) {
+      await server.stderr.cancel();
+    }
   }
 });
