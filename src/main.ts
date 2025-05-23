@@ -10,7 +10,15 @@ if (Deno.env.get("DENO_ENV") !== "production") {
   }
 }
 
-const PORT = parseInt(Deno.env.get("PORT") || "8000");
+// Parse and validate the PORT environment variable to avoid NaN values
+const rawPort = Deno.env.get("PORT");
+const parsedPort = rawPort ? Number(rawPort) : NaN;
+const PORT = Number.isInteger(parsedPort) && parsedPort > 0 && parsedPort < 65536
+  ? parsedPort
+  : 8000;
+if (rawPort && PORT !== parsedPort) {
+  console.warn(`Invalid PORT value '${rawPort}', falling back to ${PORT}`);
+}
 const API_KEY = Deno.env.get("API_KEY") || "dev-api-key";
 const API_KEY_CURRENT = Deno.env.get("API_KEY_CURRENT") || API_KEY; // Use API_KEY as fallback
 const API_KEY_PREVIOUS = Deno.env.get("API_KEY_PREVIOUS") || ""; // Empty string if not set
