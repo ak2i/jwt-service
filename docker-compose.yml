@@ -9,7 +9,7 @@ services:
       - "8000:8000"
     environment:
       - PORT=8000
-      - JWT_SECRET=your-secret-key-for-development
+      # - PRIVATE_KEY_PEM=your-rsa-private-key
     volumes:
       - ./src:/app/src
     command: ["run", "--allow-net", "--allow-env", "--watch", "src/main.ts"]
