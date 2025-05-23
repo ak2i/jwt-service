@@ -1,6 +1,7 @@
 # JWT Service
 
-A stateless JWT service for issuing and verifying JWTs, built with Deno and Hono.
+A stateless JWT service for issuing and verifying JWTs, built with Deno and
+Hono.
 
 ## Features
 
@@ -17,13 +18,15 @@ A stateless JWT service for issuing and verifying JWTs, built with Deno and Hono
 ## Prerequisites
 
 - [Deno](https://deno.land/) v1.41.0 or higher
-- [Docker](https://www.docker.com/) and Docker Compose (for containerized development)
+- [Docker](https://www.docker.com/) and Docker Compose (for containerized
+  development)
 
 ## API Endpoints
 
 - `POST /issue` - Issue a new JWT (requires API key)
   - Header: `Authorization: Bearer {API_KEY}`
-  - Request body: `{ "sub": "user123", "entitlement_id": "entitlement456", "exp": 1714546789 }`
+  - Request body:
+    `{ "sub": "user123", "entitlement_id": "entitlement456", "exp": 1714546789 }`
   - Response: `{ "token": "your-jwt-token" }`
 - `POST /verify` - Verify a JWT
   - Request body: `{ "token": "your-jwt-token" }`
@@ -35,16 +38,16 @@ A stateless JWT service for issuing and verifying JWTs, built with Deno and Hono
 
 ## Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| PORT | Server port | 8000 |
-| API_KEY | API key for /issue endpoint (legacy) | dev-api-key |
-| API_KEY_CURRENT | Current API key for /issue endpoint | Same as API_KEY |
-| API_KEY_PREVIOUS | Previous API key (for rotation) | Empty |
-| PRIVATE_KEY_PEM | Private key in PEM format | Auto-generated in dev |
-| PUBLIC_KEY_PEM | Public key in PEM format | Derived from private key |
-| KEY_ID | Key ID for JWKS | default-key-1 |
-| DEFAULT_EXPIRATION | Default token expiration | 600 |
+| Variable           | Description                          | Default                  |
+| ------------------ | ------------------------------------ | ------------------------ |
+| PORT               | Server port                          | 8000                     |
+| API_KEY            | API key for /issue endpoint (legacy) | dev-api-key              |
+| API_KEY_CURRENT    | Current API key for /issue endpoint  | Same as API_KEY          |
+| API_KEY_PREVIOUS   | Previous API key (for rotation)      | Empty                    |
+| PRIVATE_KEY_PEM    | Private key in PEM format            | Auto-generated in dev    |
+| PUBLIC_KEY_PEM     | Public key in PEM format             | Derived from private key |
+| KEY_ID             | Key ID for JWKS                      | default-key-1            |
+| DEFAULT_EXPIRATION | Default token expiration             | 600                      |
 
 ## Development Setup
 
@@ -55,7 +58,8 @@ A stateless JWT service for issuing and verifying JWTs, built with Deno and Hono
    curl -fsSL https://deno.land/x/install/install.sh | sh
    ```
 
-2. Create a `.env` file with your configuration (see above environment variables)
+2. Create a `.env` file with your configuration (see above environment
+   variables)
 
 3. Start the server:
    ```
@@ -92,7 +96,20 @@ Generate a secure random API key for use with the JWT service:
 deno run --allow-env --allow-hrtime cli/generate-api-key.ts
 ```
 
-This generates a cryptographically secure random API key suitable for use in HTTP headers.
+This generates a cryptographically secure random API key suitable for use in
+HTTP headers.
+
+### Generate Key Pair
+
+Generate an RSA private key and the corresponding public key:
+
+```
+deno run --allow-env --allow-hrtime cli/generate-private-key.ts > keypair.json
+```
+
+The output is a JSON object with `privateKey` and `publicKey` fields. Set the
+`MODULUS_LENGTH` environment variable to change the key size (defaults to 2048
+bits).
 
 ### Generate Nodes JSON
 
@@ -109,21 +126,28 @@ deno run --allow-env --allow-read --allow-run cli/generate-nodes-json.ts flyio -
 deno run --allow-env --allow-read --allow-run cli/generate-nodes-json.ts cloud-run --region us-central1,asia-northeast1
 ```
 
-This generates a JSON file based on the schema defined in [doc/jwt-service-nodes.md](./doc/jwt-service-nodes.md) with deployment-specific configuration.
+This generates a JSON file based on the schema defined in
+[doc/jwt-service-nodes.md](./doc/jwt-service-nodes.md) with deployment-specific
+configuration.
 
 ## Deployment
 
-This service can be deployed using various cloud platforms. Below are instructions for AWS ECS, Fly.io, and Google Cloud Run.
+This service can be deployed using various cloud platforms. Below are
+instructions for AWS ECS, Fly.io, and Google Cloud Run.
 
 ### AWS ECS Deployment
 
-This service is designed to be deployed on AWS ECS. The service is stateless and can be scaled horizontally. Private keys should be provided via environment variables in the ECS task definition.
+This service is designed to be deployed on AWS ECS. The service is stateless and
+can be scaled horizontally. Private keys should be provided via environment
+variables in the ECS task definition.
 
-For secure API key management in production, see [AWS Secrets Manager Integration](./doc/aws-secrets-manager.md).
+For secure API key management in production, see
+[AWS Secrets Manager Integration](./doc/aws-secrets-manager.md).
 
 ### Fly.io Deployment
 
-[Fly.io](https://fly.io/) offers a simple way to deploy Docker containers with global distribution.
+[Fly.io](https://fly.io/) offers a simple way to deploy Docker containers with
+global distribution.
 
 #### Prerequisites
 
@@ -168,7 +192,8 @@ For secure API key management in production, see [AWS Secrets Manager Integratio
 
 ### Google Cloud Run Deployment
 
-[Google Cloud Run](https://cloud.google.com/run) is a fully managed platform for containerized applications.
+[Google Cloud Run](https://cloud.google.com/run) is a fully managed platform for
+containerized applications.
 
 #### Prerequisites
 
@@ -194,12 +219,12 @@ For secure API key management in production, see [AWS Secrets Manager Integratio
    # Create secrets
    echo -n "your-private-key-content" | gcloud secrets create jwt-private-key --data-file=-
    echo -n "your-api-key" | gcloud secrets create jwt-api-key --data-file=-
-   
+
    # Grant access to the service account
    gcloud secrets add-iam-policy-binding jwt-private-key \
      --member="serviceAccount:YOUR_PROJECT_NUMBER-compute@developer.gserviceaccount.com" \
      --role="roles/secretmanager.secretAccessor"
-   
+
    gcloud secrets add-iam-policy-binding jwt-api-key \
      --member="serviceAccount:YOUR_PROJECT_NUMBER-compute@developer.gserviceaccount.com" \
      --role="roles/secretmanager.secretAccessor"
@@ -209,10 +234,10 @@ For secure API key management in production, see [AWS Secrets Manager Integratio
    ```bash
    # Set your project ID
    PROJECT_ID=$(gcloud config get-value project)
-   
+
    # Build the image
    docker build -t gcr.io/$PROJECT_ID/jwt-service -f docker/Dockerfile .
-   
+
    # Push to Google Container Registry
    docker push gcr.io/$PROJECT_ID/jwt-service
    ```
