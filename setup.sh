@@ -1,5 +1,3 @@
-
-
 echo "Setting up JWT Service development environment..."
 
 if ! command -v deno &> /dev/null; then
