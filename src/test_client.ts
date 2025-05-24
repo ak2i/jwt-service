@@ -1,3 +1,6 @@
+import { load } from "./deps.ts";
+await load({ export: true });
+
 const BASE_URL = "http://localhost:8801";
 const API_KEY = Deno.env.get("API_KEY") || "dev-api-key";
 

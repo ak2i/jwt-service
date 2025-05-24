@@ -116,7 +116,7 @@ try {
     delete privateJwk.p;
     delete privateJwk.q;
     delete privateJwk.qi;
-    publicKey = await jose.importJWK(privateJwk, "RS256", { extractable: true });
+    publicKey = await jose.importJWK(privateJwk, "RS256", true );
   }
 } catch (error) {
   console.error("Error initializing keys:", error);

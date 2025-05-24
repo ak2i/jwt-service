@@ -85,7 +85,7 @@ Hono.
 ### Run the test client
 
 ```
-deno run --allow-net --allow-env src/test_client.ts
+deno run --allow-net --allow-env --allow-read src/test_client.ts
 ```
 
 ## CLI Tools
