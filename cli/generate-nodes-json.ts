@@ -28,13 +28,13 @@ async function main() {
 
     switch (deploymentType) {
       case "aws-ecs":
-        scriptPath = "./generate-nodes-json/aws-ecs.ts";
+        scriptPath = "./cli/generate-nodes-json/aws-ecs.ts";
         break;
       case "flyio":
-        scriptPath = "./generate-nodes-json/flyio.ts";
+        scriptPath = "./cli/generate-nodes-json/flyio.ts";
         break;
       case "cloud-run":
-        scriptPath = "./generate-nodes-json/cloud-run.ts";
+        scriptPath = "./cli/generate-nodes-json/cloud-run.ts";
         break;
       default:
         throw new Error(`不明なデプロイタイプ: ${deploymentType}`);

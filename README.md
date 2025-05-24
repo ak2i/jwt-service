@@ -173,7 +173,7 @@ global distribution.
 
 2. Configure secrets for your private keys and API keys:
    ```bash
-   fly secrets set PRIVATE_KEY_PEM="$(cat /path/to/your/private_key.pem)"
+   fly secrets set PRIVATE_KEY_PEM="your-privateKey"
    fly secrets set API_KEY_CURRENT="your-secure-api-key"
    ```
 
@@ -190,6 +190,12 @@ global distribution.
 5. Scale to multiple instances per region (optional):
    ```bash
    fly scale count 3
+   ```
+
+6. ノード情報JSONから各ノードの疎通確認を行う例:
+
+   ```bash
+   deno run --allow-net --allow-read cli/test_nodes_from_json.ts workdir/nodes-flyio.json workdir/api-key.txt
    ```
 
 ### Google Cloud Run Deployment
