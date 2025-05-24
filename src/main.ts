@@ -20,6 +20,7 @@ const PORT = Number.isInteger(parsedPort) && parsedPort > 0 && parsedPort < 6553
 if (rawPort && PORT !== parsedPort) {
   console.warn(`Invalid PORT value '${rawPort}', falling back to ${PORT}`);
 }
+const HOSTNAME = "::"
 const API_KEY = Deno.env.get("API_KEY") || "dev-api-key";
 if (!isProd) {
   console.log(`API_KEY:${API_KEY}`);
@@ -204,5 +205,5 @@ app.get("/.well-known/jwks.json", async (c) => {
 });
 
 // Hono v3: サーバ起動
-console.log(`JWT Service is running on http://localhost:${PORT}`);
-Deno.serve({ port: PORT }, app.fetch);
+console.log(`JWT Service is running on http://${HOSTNAME}:${PORT}`);
+Deno.serve({ hostname: HOSTNAME, port: PORT }, app.fetch);
