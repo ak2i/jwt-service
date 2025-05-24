@@ -9,6 +9,9 @@ primary_region = 'nrt'
 [build]
   dockerfile = 'docker/Dockerfile'
 
+[env]
+  DENO_ENV = "production"
+
 [http_service]
   internal_port = 8000
   force_https = true
