@@ -58,6 +58,8 @@ Hono.
    curl -fsSL https://deno.land/x/install/install.sh | sh
    ```
 
+   Deno tasks for this project are defined in `deno.json` at the repository root.
+
 2. Create a `.env` file with your configuration (see above environment
    variables)
 
