@@ -16,6 +16,7 @@ async function generateKeyPair(modulusLength: number): Promise<{
 }> {
   const { privateKey, publicKey } = await jose.generateKeyPair("RS256", {
     modulusLength,
+    extractable: true
   });
   const privatePem = await jose.exportPKCS8(privateKey);
   const publicPem = await jose.exportSPKI(publicKey);

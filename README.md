@@ -93,7 +93,8 @@ deno run --allow-net --allow-env src/test_client.ts
 Generate a secure random API key for use with the JWT service:
 
 ```
-deno run --allow-env --allow-hrtime cli/generate-api-key.ts
+mkdir -p workdir
+deno run --allow-env cli/generate-api-key.ts > workdir/api-key.txt
 ```
 
 This generates a cryptographically secure random API key suitable for use in
@@ -104,7 +105,8 @@ HTTP headers.
 Generate an RSA private key and the corresponding public key:
 
 ```
-deno run --allow-env --allow-hrtime cli/generate-private-key.ts > keypair.json
+mkdir -p workdir
+deno run --allow-env cli/generate-private-key.ts > workdir/keypair.json
 ```
 
 The output is a JSON object with `privateKey` and `publicKey` fields. Set the
