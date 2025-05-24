@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:8000";
+const BASE_URL = "http://localhost:8801";
 const API_KEY = Deno.env.get("API_KEY") || "dev-api-key";
 
 async function issueToken(sub: string, entitlement_id: string, exp?: number): Promise<string> {
@@ -10,7 +10,7 @@ async function issueToken(sub: string, entitlement_id: string, exp?: number): Pr
   if (exp) {
     payload.exp = exp;
   }
-
+  console.log(`API_KEY:${API_KEY}`)
   const response = await fetch(`${BASE_URL}/issue`, {
     method: "POST",
     headers: {

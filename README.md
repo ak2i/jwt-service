@@ -75,7 +75,7 @@ Hono.
 
 1. Build and start the container:
    ```
-   docker-compose up --build
+   docker compose up --build
    ```
 
 ## Testing
