@@ -1,6 +1,8 @@
 import { cors, Hono, jose, load } from "./deps.ts";
 
-if (Deno.env.get("DENO_ENV") !== "production") {
+const isProd = Deno.env.get("DENO_ENV") === "production";
+
+if (!isProd) {
   try {
     await load({ export: true });
     console.log("Loaded environment variables from .env file");
@@ -19,15 +21,21 @@ if (rawPort && PORT !== parsedPort) {
   console.warn(`Invalid PORT value '${rawPort}', falling back to ${PORT}`);
 }
 const API_KEY = Deno.env.get("API_KEY") || "dev-api-key";
-console.log(`API_KEY:${API_KEY}`)
+if (!isProd) {
+  console.log(`API_KEY:${API_KEY}`);
+}
 const API_KEY_CURRENT = Deno.env.get("API_KEY_CURRENT") || API_KEY; // Use API_KEY as fallback
-console.log(`API_KEY_CURRENT:${API_KEY_CURRENT}`)
+if (!isProd) {
+  console.log(`API_KEY_CURRENT:${API_KEY_CURRENT}`);
+}
 const API_KEY_PREVIOUS_PLACEHOLDER = "NONE";
 const rawApiKeyPrevious = Deno.env.get("API_KEY_PREVIOUS");
 const API_KEY_PREVIOUS = rawApiKeyPrevious && rawApiKeyPrevious !== API_KEY_PREVIOUS_PLACEHOLDER
   ? rawApiKeyPrevious
   : "";
-console.log(`API_KEY_PREVIOUS:${API_KEY_PREVIOUS}`)
+if (!isProd) {
+  console.log(`API_KEY_PREVIOUS:${API_KEY_PREVIOUS}`);
+}
 const PRIVATE_KEY_PEM = Deno.env.get("PRIVATE_KEY_PEM");
 const PUBLIC_KEY_PEM = Deno.env.get("PUBLIC_KEY_PEM");
 const KEY_ID = Deno.env.get("KEY_ID") || "default-key-1";
@@ -45,16 +53,20 @@ app.get("/health", (c) => {
 
 // Hono v3: Middlewareは app.use で登録し、ルートで next() を呼ぶ
 const apiKeyAuth = async (c, next) => {
-  console.log('apiKeyAuth has call.')
+  if (!isProd) {
+    console.log("apiKeyAuth has call.");
+  }
   const authHeader = c.req.header("Authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return c.json({ error: "Missing or invalid Authorization header" }, 401);
   }
   const providedKey = authHeader.substring(7);
-  console.log("Authorization header:", authHeader);
-  console.log("providedKey:", providedKey);
-  console.log("API_KEY_CURRENT:", API_KEY_CURRENT);
-  console.log("API_KEY_PREVIOUS:", API_KEY_PREVIOUS);
+  if (!isProd) {
+    console.log("Authorization header:", authHeader);
+    console.log("providedKey:", providedKey);
+    console.log("API_KEY_CURRENT:", API_KEY_CURRENT);
+    console.log("API_KEY_PREVIOUS:", API_KEY_PREVIOUS);
+  }
   const VALID_KEYS = [API_KEY_CURRENT, API_KEY_PREVIOUS].filter(Boolean);
   if (!VALID_KEYS.includes(providedKey)) {
     return c.json({ error: "Invalid API key" }, 401);
@@ -104,7 +116,7 @@ try {
 }
 
 // app.post("/issue", apiKeyAuth, async (c) => {
-app.on('POST', '/issue', apiKeyAuth, async (c) => {
+app.on("POST", "/issue", apiKeyAuth, async (c) => {
   try {
     const { sub, entitlement_id, exp } = await c.req.json();
 
@@ -141,7 +153,7 @@ app.on('POST', '/issue', apiKeyAuth, async (c) => {
 });
 
 // app.post("/verify", async (c) => {
-app.on('POST', '/verify', async (c) => {
+app.on("POST", "/verify", async (c) => {
   try {
     const { token } = await c.req.json();
 
