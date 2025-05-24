@@ -177,9 +177,12 @@ global distribution.
    ```
    This prevents `.env` loading and uses the secrets you configure.
 
-3. Configure secrets for your private keys and API keys:
+
+2. Configure secrets for your private keys and API keys. **Newline characters in
+   the PEM file must be preserved**:
+
    ```bash
-   fly secrets set PRIVATE_KEY_PEM="your-privateKey"
+   fly secrets set PRIVATE_KEY_PEM="$(cat path/to/private.pem)"
    fly secrets set API_KEY_CURRENT="your-secure-api-key"
    ```
 
