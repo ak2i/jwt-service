@@ -16,10 +16,10 @@ async function generateKeyPair(modulusLength: number): Promise<{
 }> {
   const { privateKey, publicKey } = await jose.generateKeyPair("RS256", {
     modulusLength,
-    extractable: true
+    extractable: true,
   });
-  const privatePem = await jose.exportPKCS8(privateKey);
-  const publicPem = await jose.exportSPKI(publicKey);
+  const privatePem = (await jose.exportPKCS8(privateKey)).replace(/\r?\n/g, "");
+  const publicPem = (await jose.exportSPKI(publicKey)).replace(/\r?\n/g, "");
   return { privateKey: privatePem, publicKey: publicPem };
 }
 
