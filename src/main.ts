@@ -106,7 +106,6 @@ try {
 // app.post("/issue", apiKeyAuth, async (c) => {
 app.on('POST', '/issue', apiKeyAuth, async (c) => {
   try {
-    console.log(`request for /issue`)
     const { sub, entitlement_id, exp } = await c.req.json();
 
     if (!sub || !entitlement_id) {
