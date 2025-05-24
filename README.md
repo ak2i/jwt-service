@@ -184,7 +184,8 @@ global distribution.
    the PEM file must be preserved**:
 
    ```bash
-   fly secrets set PRIVATE_KEY_PEM="$(cat path/to/private.pem)"
+   fly secrets set PRIVATE_KEY_PEM="your-privateKey"
+   fly secrets set PUBLIC_KEY_PEM="your-publicKey"
    fly secrets set API_KEY_CURRENT="your-secure-api-key"
    ```
 
