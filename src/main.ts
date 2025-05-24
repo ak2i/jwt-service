@@ -99,7 +99,11 @@ try {
   }
 
   if (PUBLIC_KEY_PEM && !publicKey) {
-    publicKey = await jose.importSPKI(PUBLIC_KEY_PEM, "RS256");
+    publicKey = await jose.importSPKI(
+      PUBLIC_KEY_PEM,
+      "RS256",
+      { extractable: true },
+    );
     console.log("Loaded public key from environment variable");
   }
 
@@ -112,7 +116,7 @@ try {
     delete privateJwk.p;
     delete privateJwk.q;
     delete privateJwk.qi;
-    publicKey = await jose.importJWK(privateJwk, "RS256");
+    publicKey = await jose.importJWK(privateJwk, "RS256", { extractable: true });
   }
 } catch (error) {
   console.error("Error initializing keys:", error);
