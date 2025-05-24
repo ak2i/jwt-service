@@ -1,4 +1,14 @@
-import { cors, Hono, jose, load } from "./deps.ts";
+import { dinatra, jose, load } from "./deps.ts";
+
+function jsonResponse(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+    },
+  });
+}
 
 const isProd = Deno.env.get("DENO_ENV") === "production";
 
@@ -41,24 +51,29 @@ const PUBLIC_KEY_PEM = Deno.env.get("PUBLIC_KEY_PEM");
 const KEY_ID = Deno.env.get("KEY_ID") || "default-key-1";
 const DEFAULT_EXPIRATION = Deno.env.get("DEFAULT_EXPIRATION") || "1h";
 
-const app = new Hono();
+const app = dinatra();
 
-// Hono v3: Middlewareの登録方法
-app.use(cors());
+// Basic CORS support
+app.options("/*", () =>
+  new Response(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+    },
+  }));
 
-// Hono v3: ルーティング
-app.get("/health", (c) => {
-  return c.json({ status: "ok" });
-});
+// Simple health check endpoint
+app.get("/health", () => jsonResponse({ status: "ok" }));
 
-// Hono v3: Middlewareは app.use で登録し、ルートで next() を呼ぶ
-const apiKeyAuth = async (c, next) => {
+const apiKeyAuth = (req: Request): Response | undefined => {
   if (!isProd) {
     console.log("apiKeyAuth has call.");
   }
-  const authHeader = c.req.header("Authorization");
+  const authHeader = req.headers.get("Authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return c.json({ error: "Missing or invalid Authorization header" }, 401);
+    return jsonResponse({ error: "Missing or invalid Authorization header" }, 401);
   }
   const providedKey = authHeader.substring(7);
   if (!isProd) {
@@ -69,9 +84,9 @@ const apiKeyAuth = async (c, next) => {
   }
   const VALID_KEYS = [API_KEY_CURRENT, API_KEY_PREVIOUS].filter(Boolean);
   if (!VALID_KEYS.includes(providedKey)) {
-    return c.json({ error: "Invalid API key" }, 401);
+    return jsonResponse({ error: "Invalid API key" }, 401);
   }
-  await next();
+  return undefined;
 };
 
 let privateKey;
@@ -116,20 +131,23 @@ try {
     delete privateJwk.p;
     delete privateJwk.q;
     delete privateJwk.qi;
-    publicKey = await jose.importJWK(privateJwk, "RS256", true );
+    publicKey = await jose.importJWK(privateJwk, "RS256", true);
   }
 } catch (error) {
   console.error("Error initializing keys:", error);
   Deno.exit(1);
 }
 
-// app.post("/issue", apiKeyAuth, async (c) => {
-app.on("POST", "/issue", apiKeyAuth, async (c) => {
+app.post("/issue", async (req) => {
+  const authCheck = await apiKeyAuth(req);
+  if (authCheck) return authCheck;
   try {
-    const { sub, entitlement_id, exp } = await c.req.json();
+    const { sub, entitlement_id, exp } = await req.json();
 
     if (!sub || !entitlement_id) {
-      return c.json({ error: "Missing required fields: sub and entitlement_id are required" }, 400);
+      return jsonResponse({
+        error: "Missing required fields: sub and entitlement_id are required",
+      }, 400);
     }
 
     const payload = {
@@ -153,40 +171,39 @@ app.on("POST", "/issue", apiKeyAuth, async (c) => {
       .setExpirationTime(expiration)
       .sign(privateKey);
 
-    return c.json({ token });
+    return jsonResponse({ token });
   } catch (error) {
     console.error("Error issuing token:", error);
-    return c.json({ error: "Failed to issue token" }, 500);
+    return jsonResponse({ error: "Failed to issue token" }, 500);
   }
 });
 
-// app.post("/verify", async (c) => {
-app.on("POST", "/verify", async (c) => {
+app.post("/verify", async (req) => {
   try {
-    const { token } = await c.req.json();
+    const { token } = await req.json();
 
     if (!token) {
-      return c.json({ error: "Missing token" }, 400);
+      return jsonResponse({ error: "Missing token" }, 400);
     }
 
     const { payload } = await jose.jwtVerify(token, publicKey, {
       algorithms: ["RS256"],
     });
 
-    return c.json({
+    return jsonResponse({
       valid: true,
       payload,
     });
   } catch (error) {
     console.error("Token verification failed:", error.message);
-    return c.json({
+    return jsonResponse({
       valid: false,
       error: error.message,
     }, 401);
   }
 });
 
-app.get("/.well-known/jwks.json", async (c) => {
+app.get("/.well-known/jwks.json", async () => {
   try {
     const jwk = await jose.exportJWK(publicKey);
 
@@ -194,15 +211,15 @@ app.get("/.well-known/jwks.json", async (c) => {
     jwk.use = "sig";
     jwk.alg = "RS256";
 
-    return c.json({
+    return jsonResponse({
       keys: [jwk],
     });
   } catch (error) {
     console.error("Error generating JWKS:", error);
-    return c.json({ error: "Failed to generate JWKS" }, 500);
+    return jsonResponse({ error: "Failed to generate JWKS" }, 500);
   }
 });
 
-// Hono v3: サーバ起動
+// Server start
 console.log(`JWT Service is running on http://localhost:${PORT}`);
-Deno.serve({ port: PORT }, app.fetch);
+await app.listen({ port: PORT });
