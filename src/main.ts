@@ -79,7 +79,11 @@ let publicKey;
 
 try {
   if (PRIVATE_KEY_PEM) {
-    privateKey = await jose.importPKCS8(PRIVATE_KEY_PEM, "RS256");
+    privateKey = await jose.importPKCS8(
+      PRIVATE_KEY_PEM,
+      "RS256",
+      { extractable: true },
+    );
     console.log("Loaded private key from environment variable");
   } else {
     console.warn("No private key provided, generating a temporary key pair for development");
