@@ -170,29 +170,35 @@ global distribution.
    fly launch --dockerfile docker/Dockerfile
    ```
    - This will create a `fly.toml` file in your project
+2. Edit `fly.toml` to run in production mode:
+   ```toml
+   [env]
+     DENO_ENV = "production"
+   ```
+   This prevents `.env` loading and uses the secrets you configure.
 
-2. Configure secrets for your private keys and API keys:
+3. Configure secrets for your private keys and API keys:
    ```bash
    fly secrets set PRIVATE_KEY_PEM="your-privateKey"
    fly secrets set API_KEY_CURRENT="your-secure-api-key"
    ```
 
-3. Deploy your application:
+4. Deploy your application:
    ```bash
    fly deploy
    ```
 
-4. Scale to multiple regions for redundancy (optional):
+5. Scale to multiple regions for redundancy (optional):
    ```bash
    fly regions add nrt fra syd
    ```
 
-5. Scale to multiple instances per region (optional):
+6. Scale to multiple instances per region (optional):
    ```bash
    fly scale count 3
    ```
 
-6. ノード情報JSONから各ノードの疎通確認を行う例:
+7. ノード情報JSONから各ノードの疎通確認を行う例:
 
    ```bash
    deno run --allow-net --allow-read cli/test_nodes_from_json.ts workdir/nodes-flyio.json workdir/api-key.txt
