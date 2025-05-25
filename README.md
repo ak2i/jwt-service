@@ -41,6 +41,7 @@ Hono.
 | Variable           | Description                          | Default                  |
 | ------------------ | ------------------------------------ | ------------------------ |
 | PORT               | Server port                          | 8000                     |
+| HOSTNAME           | Server hostname                      | ::         |
 | API_KEY            | API key for /issue endpoint (legacy) | dev-api-key              |
 | API_KEY_CURRENT    | Current API key for /issue endpoint  | Same as API_KEY          |
 | API_KEY_PREVIOUS   | Previous API key (for rotation)      | NONE                     |
