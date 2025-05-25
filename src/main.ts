@@ -20,7 +20,10 @@ const PORT = Number.isInteger(parsedPort) && parsedPort > 0 && parsedPort < 6553
 if (rawPort && PORT !== parsedPort) {
   console.warn(`Invalid PORT value '${rawPort}', falling back to ${PORT}`);
 }
-const HOSTNAME = "::"
+const HOSTNAME = Deno.env.get("HOSTNAME") || "::";
+if (!isProd) {
+  console.log(`HOSTNAME:${HOSTNAME}`);
+}
 const API_KEY = Deno.env.get("API_KEY") || "dev-api-key";
 if (!isProd) {
   console.log(`API_KEY:${API_KEY}`);
