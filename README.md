@@ -142,12 +142,335 @@ instructions for AWS ECS, Fly.io, and Google Cloud Run.
 
 ### AWS ECS Deployment
 
-This service is designed to be deployed on AWS ECS. The service is stateless and
-can be scaled horizontally. Private keys should be provided via environment
-variables in the ECS task definition.
+[Amazon Elastic Container Service (ECS)](https://aws.amazon.com/ecs/) provides a scalable container orchestration service for running Docker containers in AWS.
 
-For secure API key management in production, see
+#### Prerequisites
+
+1. Install the AWS CLI:
+   ```bash
+   curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+   unzip awscliv2.zip
+   sudo ./aws/install
+   ```
+
+2. Configure AWS CLI with your credentials:
+   ```bash
+   aws configure
+   ```
+
+3. Install Docker CLI:
+   ```bash
+   sudo apt-get update
+   sudo apt-get install docker.io
+   ```
+
+4. Required AWS IAM permissions:
+   - `ecr:*` - For ECR repository operations
+   - `ecs:*` - For ECS cluster and service operations
+   - `secretsmanager:*` - For Secrets Manager operations
+   - `iam:PassRole` - For assigning roles to ECS tasks
+
+#### ECR Repository Creation
+
+1. Create an ECR repository for the JWT service:
+   ```bash
+   aws ecr create-repository \
+     --repository-name jwt-service \
+     --image-scanning-configuration scanOnPush=true
+   ```
+
+2. Get the ECR repository URI:
+   ```bash
+   ECR_REPO=$(aws ecr describe-repositories \
+     --repository-names jwt-service \
+     --query 'repositories[0].repositoryUri' \
+     --output text)
+   echo $ECR_REPO
+   ```
+
+3. Authenticate Docker to your ECR registry:
+   ```bash
+   aws ecr get-login-password --region $(aws configure get region) | \
+   docker login --username AWS --password-stdin $ECR_REPO
+   ```
+
+#### Docker Image Build and Push
+
+1. Build the Docker image using the provided Dockerfile:
+   ```bash
+   docker build -t jwt-service -f docker/Dockerfile .
+   ```
+
+2. Tag the image for ECR:
+   ```bash
+   docker tag jwt-service:latest $ECR_REPO:latest
+   ```
+
+3. Push the image to ECR:
+   ```bash
+   docker push $ECR_REPO:latest
+   ```
+
+#### Secrets Manager Configuration
+
+1. Generate a secure API key:
+   ```bash
+   mkdir -p workdir
+   deno run --allow-env --allow-hrtime cli/generate-api-key.ts > workdir/api-key.txt
+   ```
+
+2. Generate RSA key pair for JWT signing:
+   ```bash
+   deno run --allow-env cli/generate-private-key.ts > workdir/keypair.json
+   ```
+
+3. Store the keys in AWS Secrets Manager:
+   ```bash
+   # Store API keys
+   aws secretsmanager create-secret \
+     --name jwt-service/api-keys \
+     --description "API keys for JWT service" \
+     --secret-string "{\"API_KEY_CURRENT\":\"$(cat workdir/api-key.txt)\",\"API_KEY_PREVIOUS\":\"\"}"
+
+   # Store RSA keys
+   PRIVATE_KEY=$(jq -r '.privateKey' workdir/keypair.json)
+   PUBLIC_KEY=$(jq -r '.publicKey' workdir/keypair.json)
+   
+   aws secretsmanager create-secret \
+     --name jwt-service/rsa-keys \
+     --description "RSA keys for JWT service" \
+     --secret-string "{\"PRIVATE_KEY_PEM\":\"$PRIVATE_KEY\",\"PUBLIC_KEY_PEM\":\"$PUBLIC_KEY\",\"KEY_ID\":\"ecs-key-1\"}"
+   ```
+
+For more detailed information on API key management with AWS Secrets Manager, see
 [AWS Secrets Manager Integration](./doc/aws-secrets-manager.md).
+
+#### ECS Task Definition
+
+1. Create an IAM role for the ECS task:
+   ```bash
+   # Create a trust policy file
+   cat > trust-policy.json << EOF
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Effect": "Allow",
+         "Principal": {
+           "Service": "ecs-tasks.amazonaws.com"
+         },
+         "Action": "sts:AssumeRole"
+       }
+     ]
+   }
+   EOF
+
+   # Create the role
+   aws iam create-role \
+     --role-name jwt-service-task-role \
+     --assume-role-policy-document file://trust-policy.json
+
+   # Attach the Secrets Manager policy
+   aws iam put-role-policy \
+     --role-name jwt-service-task-role \
+     --policy-name jwt-service-secrets-policy \
+     --policy-document '{
+       "Version": "2012-10-17",
+       "Statement": [
+         {
+           "Effect": "Allow",
+           "Action": [
+             "secretsmanager:GetSecretValue"
+           ],
+           "Resource": "arn:aws:secretsmanager:*:*:secret:jwt-service/*"
+         }
+       ]
+     }'
+   ```
+
+2. Create a task definition JSON file:
+   ```bash
+   cat > jwt-service-task-definition.json << EOF
+   {
+     "family": "jwt-service",
+     "networkMode": "awsvpc",
+     "executionRoleArn": "arn:aws:iam::<YOUR_ACCOUNT_ID>:role/ecsTaskExecutionRole",
+     "taskRoleArn": "arn:aws:iam::<YOUR_ACCOUNT_ID>:role/jwt-service-task-role",
+     "containerDefinitions": [
+       {
+         "name": "jwt-service",
+         "image": "${ECR_REPO}:latest",
+         "essential": true,
+         "portMappings": [
+           {
+             "containerPort": 8000,
+             "hostPort": 8000,
+             "protocol": "tcp"
+           }
+         ],
+         "environment": [
+           {
+             "name": "PORT",
+             "value": "8000"
+           },
+           {
+             "name": "DEFAULT_EXPIRATION",
+             "value": "3600"
+           }
+         ],
+         "secrets": [
+           {
+             "name": "API_KEY_CURRENT",
+             "valueFrom": "arn:aws:secretsmanager:<REGION>:<YOUR_ACCOUNT_ID>:secret:jwt-service/api-keys:API_KEY_CURRENT::"
+           },
+           {
+             "name": "API_KEY_PREVIOUS",
+             "valueFrom": "arn:aws:secretsmanager:<REGION>:<YOUR_ACCOUNT_ID>:secret:jwt-service/api-keys:API_KEY_PREVIOUS::"
+           },
+           {
+             "name": "PRIVATE_KEY_PEM",
+             "valueFrom": "arn:aws:secretsmanager:<REGION>:<YOUR_ACCOUNT_ID>:secret:jwt-service/rsa-keys:PRIVATE_KEY_PEM::"
+           },
+           {
+             "name": "PUBLIC_KEY_PEM",
+             "valueFrom": "arn:aws:secretsmanager:<REGION>:<YOUR_ACCOUNT_ID>:secret:jwt-service/rsa-keys:PUBLIC_KEY_PEM::"
+           },
+           {
+             "name": "KEY_ID",
+             "valueFrom": "arn:aws:secretsmanager:<REGION>:<YOUR_ACCOUNT_ID>:secret:jwt-service/rsa-keys:KEY_ID::"
+           }
+         ],
+         "logConfiguration": {
+           "logDriver": "awslogs",
+           "options": {
+             "awslogs-group": "/ecs/jwt-service",
+             "awslogs-region": "<REGION>",
+             "awslogs-stream-prefix": "ecs"
+           }
+         },
+         "healthCheck": {
+           "command": ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"],
+           "interval": 30,
+           "timeout": 5,
+           "retries": 3,
+           "startPeriod": 60
+         }
+       }
+     ],
+     "requiresCompatibilities": ["FARGATE"],
+     "cpu": "256",
+     "memory": "512"
+   }
+   EOF
+
+   # Replace placeholders with actual values
+   sed -i "s/<YOUR_ACCOUNT_ID>/$(aws sts get-caller-identity --query Account --output text)/g" jwt-service-task-definition.json
+   sed -i "s/<REGION>/$(aws configure get region)/g" jwt-service-task-definition.json
+
+   # Register the task definition
+   aws ecs register-task-definition --cli-input-json file://jwt-service-task-definition.json
+   ```
+
+#### ECS Cluster and Service Creation
+
+1. Create an ECS cluster:
+   ```bash
+   aws ecs create-cluster --cluster-name jwt-service-cluster
+   ```
+
+2. Create a security group for the service:
+   ```bash
+   # Create a security group
+   SG_ID=$(aws ec2 create-security-group \
+     --group-name jwt-service-sg \
+     --description "Security group for JWT service" \
+     --vpc-id <YOUR_VPC_ID> \
+     --query 'GroupId' \
+     --output text)
+
+   # Allow inbound traffic on port 8000
+   aws ec2 authorize-security-group-ingress \
+     --group-id $SG_ID \
+     --protocol tcp \
+     --port 8000 \
+     --cidr 0.0.0.0/0
+   ```
+
+3. Create the ECS service:
+   ```bash
+   # Get subnet IDs for your VPC
+   SUBNET_IDS=$(aws ec2 describe-subnets \
+     --filters "Name=vpc-id,Values=<YOUR_VPC_ID>" \
+     --query 'Subnets[*].SubnetId' \
+     --output json | jq -c .)
+
+   # Create the service
+   aws ecs create-service \
+     --cluster jwt-service-cluster \
+     --service-name jwt-service \
+     --task-definition jwt-service:1 \
+     --desired-count 2 \
+     --launch-type FARGATE \
+     --network-configuration "awsvpcConfiguration={subnets=$SUBNET_IDS,securityGroups=[$SG_ID],assignPublicIp=ENABLED}" \
+     --scheduling-strategy REPLICA
+   ```
+
+4. (Optional) Create a load balancer:
+   ```bash
+   # Create a load balancer
+   aws elbv2 create-load-balancer \
+     --name jwt-service-lb \
+     --subnets <SUBNET_ID_1> <SUBNET_ID_2> \
+     --security-groups $SG_ID \
+     --type application
+
+   # Create a target group
+   aws elbv2 create-target-group \
+     --name jwt-service-tg \
+     --protocol HTTP \
+     --port 8000 \
+     --vpc-id <YOUR_VPC_ID> \
+     --target-type ip \
+     --health-check-path /health
+
+   # Create a listener
+   aws elbv2 create-listener \
+     --load-balancer-arn <LOAD_BALANCER_ARN> \
+     --protocol HTTP \
+     --port 80 \
+     --default-actions Type=forward,TargetGroupArn=<TARGET_GROUP_ARN>
+
+   # Update the service to use the load balancer
+   aws ecs update-service \
+     --cluster jwt-service-cluster \
+     --service jwt-service \
+     --load-balancers "targetGroupArn=<TARGET_GROUP_ARN>,containerName=jwt-service,containerPort=8000"
+   ```
+
+#### Deployment Verification
+
+1. Check the service status:
+   ```bash
+   aws ecs describe-services \
+     --cluster jwt-service-cluster \
+     --services jwt-service
+   ```
+
+2. Generate JWT Service nodes information JSON for AWS ECS:
+   ```bash
+   deno run --allow-env --allow-read --allow-run cli/generate-nodes-json.ts aws-ecs \
+     --region $(aws configure get region) \
+     --host-prefix $(aws elbv2 describe-load-balancers \
+       --names jwt-service-lb \
+       --query 'LoadBalancers[0].DNSName' \
+       --output text) \
+     --count 2
+   ```
+
+3. ノード情報JSONから各ノードの疎通確認を行う例:
+   ```bash
+   deno run --allow-net --allow-read cli/test_nodes_from_json.ts workdir/nodes-aws-ecs.json workdir/api-key.txt
+   ```
 
 ### Fly.io Deployment
 
