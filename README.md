@@ -140,6 +140,55 @@ configuration.
 This service can be deployed using various cloud platforms. Below are
 instructions for AWS ECS, Fly.io, and Google Cloud Run.
 
+### Container Image (GHCR)
+
+Official container images can be built and published to GitHub Container Registry (GHCR).
+
+- Image name: `ghcr.io/<OWNER>/<REPO>` (e.g. `ghcr.io/ak2i/jwt-service`)
+- Tags: `latest` on `main`, git `v*` tags, branch and SHA tags
+
+#### Pull
+
+```
+docker pull ghcr.io/<OWNER>/<REPO>:latest
+```
+
+If your repository is private, authenticate first:
+
+```
+echo $GITHUB_TOKEN | docker login ghcr.io -u <GITHUB_USER> --password-stdin
+```
+
+#### Run
+
+```
+docker run --rm -p 8000:8000 \
+  -e PORT=8000 \
+  -e DEFAULT_EXPIRATION=3600 \
+  -e API_KEY_CURRENT=your-api-key \
+  -e API_KEY_PREVIOUS= \
+  -e PRIVATE_KEY_PEM="$(cat path/to/private.pem)" \
+  -e PUBLIC_KEY_PEM="$(cat path/to/public.pem)" \
+  -e KEY_ID=container-key-1 \
+  ghcr.io/<OWNER>/<REPO>:latest
+```
+
+Alternatively, use an env file:
+
+```
+docker run --rm -p 8000:8000 --env-file .env ghcr.io/<OWNER>/<REPO>:latest
+```
+
+#### CI publishing
+
+This repository contains a GitHub Actions workflow at `.github/workflows/publish-ghcr.yml` that:
+
+- Logs in to GHCR using `GITHUB_TOKEN`
+- Builds multi-arch images (linux/amd64, linux/arm64) from `docker/Dockerfile`
+- Pushes tags for branches, commits, and releases
+
+Trigger: push to `main`/`master`, push tags `v*`, or `workflow_dispatch`.
+
 ### AWS ECS Deployment
 
 [Amazon Elastic Container Service (ECS)](https://aws.amazon.com/ecs/) provides a scalable container orchestration service for running Docker containers in AWS.

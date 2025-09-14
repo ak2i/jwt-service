@@ -1,0 +1,31 @@
+{
+  "name": "@ak2i/jwt-service",
+  "version": "1.0.0",
+  "description": "Stateless JWT server (Deno + Hono) published as an npm CLI.",
+  "keywords": [
+    "jwt",
+    "auth",
+    "serve",
+    "cli",
+    "hono",
+    "deno"
+  ],
+  "homepage": "https://github.com/ak2i/jwt-service#readme",
+  "bugs": {
+    "url": "https://github.com/ak2i/jwt-service/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ak2i/jwt-service.git"
+  },
+  "license": "MIT",
+  "author": "ak2i (https://github.com/ak2i)",
+  "type": "module",
+  "main": "dist/index.js",
+  "directories": {
+    "doc": "doc"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
