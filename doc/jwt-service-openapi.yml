@@ -17,7 +17,6 @@ paths:
               type: object
               required:
                 - sub
-                - entitlement_id
               properties:
                 sub:
                   type: string
@@ -29,6 +28,24 @@ paths:
                   type: integer
                   format: int64
                   description: Expiration time (UNIX timestamp)
+                nbf:
+                  type: integer
+                  format: int64
+                  description: Not-before time (UNIX timestamp)
+                iss:
+                  type: string
+                  description: Issuer
+                aud:
+                  oneOf:
+                    - type: string
+                    - type: array
+                      items:
+                        type: string
+                  description: Audience
+                jti:
+                  type: string
+                  description: JWT ID
+              additionalProperties: true
       responses:
         "200":
           description: JWT successfully issued

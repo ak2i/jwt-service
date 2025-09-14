@@ -130,17 +130,16 @@ try {
 // app.post("/issue", apiKeyAuth, async (c) => {
 app.on("POST", "/issue", apiKeyAuth, async (c) => {
   try {
-    const { sub, entitlement_id, exp } = await c.req.json();
+    const body = await c.req.json();
+    const { sub, exp, nbf, ...restClaims } = body || {};
 
-    if (!sub || !entitlement_id) {
-      return c.json({ error: "Missing required fields: sub and entitlement_id are required" }, 400);
+    if (!sub) {
+      return c.json({ error: "Missing required field: sub" }, 400);
     }
 
-    const payload = {
-      sub,
-      entitlement_id,
-      iat: Math.floor(Date.now() / 1000),
-    };
+    // Exclude reserved claims that will be set via builder methods
+    delete restClaims.iat;
+    delete restClaims.exp;
 
     let expiration = exp;
     if (!expiration) {
@@ -151,11 +150,16 @@ app.on("POST", "/issue", apiKeyAuth, async (c) => {
       }
     }
 
-    const token = await new jose.SignJWT(payload)
+    let signer = new jose.SignJWT({ sub, ...restClaims })
       .setProtectedHeader({ alg: "RS256", kid: KEY_ID })
       .setIssuedAt()
-      .setExpirationTime(expiration)
-      .sign(privateKey);
+      .setExpirationTime(expiration);
+
+    if (nbf) {
+      signer = signer.setNotBefore(nbf);
+    }
+
+    const token = await signer.sign(privateKey);
 
     return c.json({ token });
   } catch (error) {

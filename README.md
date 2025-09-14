@@ -26,7 +26,8 @@ Hono.
 - `POST /issue` - Issue a new JWT (requires API key)
   - Header: `Authorization: Bearer {API_KEY}`
   - Request body:
-    `{ "sub": "user123", "entitlement_id": "entitlement456", "exp": 1714546789 }`
+    Minimal: `{ "sub": "user123" }`
+    Optional (examples): `{"entitlement_id":"entitlement456","exp":1714546789,"nbf":1714543189}`
   - Response: `{ "token": "your-jwt-token" }`
 - `POST /verify` - Verify a JWT
   - Request body: `{ "token": "your-jwt-token" }`
