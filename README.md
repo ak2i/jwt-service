@@ -28,9 +28,13 @@ Hono.
   - Request body:
     Minimal: `{ "sub": "user123" }`
     Optional (examples): `{"entitlement_id":"entitlement456","exp":1714546789,"nbf":1714543189}`
+    Request-binding claims (optional):
+    - `method` HTTP method string to bind the token (e.g., `POST`)
+    - `url` Full URL to bind (e.g., `https://api.example.com/v1/orders`)
+    - `body_sha256` Hex-encoded SHA-256 of the request body to bind
   - Response: `{ "token": "your-jwt-token" }`
 - `POST /verify` - Verify a JWT
-  - Request body: `{ "token": "your-jwt-token" }`
+  - Request body: `{ "token": "your-jwt-token", "context"?: { "method"?: string, "url"?: string, "body_sha256"?: string, "body_raw"?: string } }`
   - Response: `{ "valid": true, "payload": { ... } }`
 - `GET /.well-known/jwks.json` - Get JWKS public keys
   - Response: `{ "keys": [ { "kty": "RSA", ... } ] }`
@@ -46,10 +50,40 @@ Hono.
 | API_KEY            | API key for /issue endpoint (legacy) | dev-api-key              |
 | API_KEY_CURRENT    | Current API key for /issue endpoint  | Same as API_KEY          |
 | API_KEY_PREVIOUS   | Previous API key (for rotation)      | NONE                     |
-| PRIVATE_KEY_PEM    | Private key in PEM format            | Auto-generated in dev    |
-| PUBLIC_KEY_PEM     | Public key in PEM format             | Derived from private key |
+| PRIVATE_KEY_PEM    | Private key in PEM format            | Auto-generated in dev (disabled if `VERIFY_ONLY=true`) |
+| PUBLIC_KEY_PEM     | Public key in PEM format             | Derived from private key or required in `VERIFY_ONLY` |
 | KEY_ID             | Key ID for JWKS                      | default-key-1            |
 | DEFAULT_EXPIRATION | Default token expiration             | 600                      |
+| VERIFY_ONLY        | Disable `/issue`; ignore private key | false                    |
+| ENFORCE_BINDING    | Enforce `method/url/body_sha256`     | false                    |
+| REPLAY_CACHE_ENABLED | Enable in-memory replay cache      | false                    |
+| REPLAY_TTL_SEC     | Replay window in seconds             | 120                      |
+| REQUIRE_JTI_ON_VERIFY | Require `jti` on verify           | false (true if binding)  |
+| ISS                | Optional issuer to set/verify        | unset                    |
+| AUD                | Optional audience to set/verify      | unset                    |
+
+### Verify-only mode
+
+Run a public-facing instance that can only verify tokens and cannot issue:
+
+```
+docker compose up --build verify
+```
+
+Notes:
+- In `VERIFY_ONLY=true`, the service does not load or use the private key and `/issue` is not registered.
+- Provide `PUBLIC_KEY_PEM` that corresponds to the issuing instance’s private key. Tokens are verified with `RS256`.
+
+### Request binding and replay protection
+
+- When `ENFORCE_BINDING=true`, `/verify` checks bound claims in the token against the provided `context` fields (`method`, `url`, `body_sha256` or `body_raw`).
+- When `REPLAY_CACHE_ENABLED=true`, the service rejects repeated `jti` values within `REPLAY_TTL_SEC` (or until token `exp`, whichever is earlier).
+
+Limitations of the in-memory replay cache:
+- Process-local only: does not share state across replicas; use a shared store (Redis, etc.) if you scale horizontally.
+- Volatile: cache resets on process restart or deploy; short-lived tokens mitigate risk.
+- Memory-bounded by TTL and traffic: very high QPS with long TTL can increase memory; monitor and cap TTL.
+- Clock skew: relies on local time for TTL/`exp` decisions; keep NTP in sync.
 
 ## Development Setup
 

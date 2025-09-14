@@ -12,3 +12,20 @@ services:
     volumes:
       - ./src:/app/src
     command: ["run", "--allow-net", "--allow-env", "--watch", "--allow-read", "src/main.ts"]
+
+  verify:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8802:8000"
+    env_file:
+      - .env
+    environment:
+      - VERIFY_ONLY=true
+      - ENFORCE_BINDING=true
+      - REPLAY_CACHE_ENABLED=true
+      - REPLAY_TTL_SEC=120
+    volumes:
+      - ./src:/app/src
+    command: ["run", "--allow-net", "--allow-env", "--watch", "--allow-read", "src/main.ts"]
